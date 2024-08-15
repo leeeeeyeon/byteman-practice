@@ -1,5 +1,5 @@
 RULE delay
-CLASS Main
+CLASS FunctionDelay
 METHOD printHello
 AT ENTRY
 IF TRUE
