@@ -1,0 +1,7 @@
+RULE exception
+CLASS Main
+METHOD main
+AT ENTRY
+IF TRUE
+DO throw new RuntimeException("This is an exception")
+ENDRULE
