@@ -1,0 +1,7 @@
+RULE delay
+CLASS FunctionDelay
+METHOD printBye
+AT ENTRY
+IF TRUE
+DO Thread.sleep(5000)
+ENDRULE
