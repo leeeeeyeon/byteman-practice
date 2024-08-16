@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-deployment
+  labels:
+    app: hello-sample
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-sample
+  template:
+    metadata:
+      labels:
+        app: hello-sample
+    spec:
+      containers:
+        - name: hello-sample
+          image: leeeeeyeon/java-sample-app:latest
+          ports:
+            - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-sample-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000
+  selector:
+    app: hello-sample
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: byteman-helper-pod
+  labels:
+    app: byteman-helper
+spec:
+  initContainers:
+    - name: intstall-byteman
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          wget https://downloads.jboss.org/byteman/4.0.23/byteman-download-4.0.23-bin.zip
+          unzip byteman-download-4.0.23-bin.zip
+          
+          mkdir /byteman/lib /byteman/bin /byteman/rules
+          
+          mv byteman-download-4.0.23/lib/byteman.jar /byteman/lib/byteman.jar
+          mv byteman-download-4.0.23/bin/bmcheck.sh /byteman/bin/bmcheck.sh
+          
+          cat << EOF > /byteman/rules/hahaha.btm
+          RULE hahaha
+          CLASS Hello
+          METHOD sayHello
+          AT ENTRY
+          IF true
+          DO traceln("hahaha")
+          ENDRULE
+          EOF
+      volumeMounts:
+        - mountPath: /byteman
+          name: byteman-volume
+  containers:
+    - name: hello-sample
+      image: leeeeeyeon/java-sample-app:latest
+      env:
+        - name: JAVA_TOOL_OPTIONS
+          value: "-javaagent:/byteman/lib/byteman.jar=script:/byteman/rules/hahaha.btm"
+      volumeMounts:
+        - mountPath: /byteman
+          name: byteman-volume
+  volumes:
+    - name: byteman-volume
+      emptyDir: {}
