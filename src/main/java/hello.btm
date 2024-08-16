@@ -1,0 +1,7 @@
+RULE hahaha
+CLASS Hello
+METHOD sayHello
+AT ENTRY
+IF true
+DO traceln("hahaha")
+ENDRULE
