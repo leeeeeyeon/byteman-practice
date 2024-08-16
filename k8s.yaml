@@ -40,12 +40,12 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: byteman-helper-pod
+  name: byteman-injection
   labels:
-    app: byteman-helper
+    app: byteman-injection
 spec:
   initContainers:
-    - name: intstall-byteman
+    - name: byteman-install
       image: busybox
       command:
         - sh
