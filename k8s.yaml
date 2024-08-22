@@ -38,6 +38,20 @@ spec:
 ---
 
 apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: byteman-config
+data:
+  BYTEMAN_VERSION: "4.0.23"
+  RULE_NAME: "hahaha"
+  TARGET_CLASS: "Hello"
+  TARGET_METHOD: "sayHello"
+  TARGET_LOCATION: "ENTRY"
+  ACTION: "traceln(\"hahaha\")"
+
+---
+
+apiVersion: v1
 kind: Pod
 metadata:
   name: byteman-injection
@@ -47,25 +61,56 @@ spec:
   initContainers:
     - name: byteman-install
       image: busybox
+      env:
+        - name: BYTEMAN_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: byteman-config
+              key: BYTEMAN_VERSION
+        - name: RULE_NAME
+          valueFrom:
+              configMapKeyRef:
+                name: byteman-config
+                key: RULE_NAME
+        - name: TARGET_CLASS
+          valueFrom:
+            configMapKeyRef:
+              name: byteman-config
+              key: TARGET_CLASS
+        - name: TARGET_METHOD
+          valueFrom:
+            configMapKeyRef:
+              name: byteman-config
+              key: TARGET_METHOD
+        - name: TARGET_LOCATION
+          valueFrom:
+            configMapKeyRef:
+              name: byteman-config
+              key: TARGET_LOCATION
+        - name: ACTION
+          valueFrom:
+            configMapKeyRef:
+              name: byteman-config
+              key: ACTION
       command:
         - sh
         - -c
         - |
-          wget https://downloads.jboss.org/byteman/4.0.23/byteman-download-4.0.23-bin.zip
-          unzip byteman-download-4.0.23-bin.zip
+          wget https://downloads.jboss.org/byteman/${BYTEMAN_VERSION}/byteman-download-${BYTEMAN_VERSION}-bin.zip
+          unzip byteman-download-${BYTEMAN_VERSION}-bin.zip
           
           mkdir /byteman/lib /byteman/bin /byteman/rules
           
-          mv byteman-download-4.0.23/lib/byteman.jar /byteman/lib/byteman.jar
-          mv byteman-download-4.0.23/bin/bmcheck.sh /byteman/bin/bmcheck.sh
+          mv byteman-download-${BYTEMAN_VERSION}/lib/byteman.jar /byteman/lib/byteman.jar
+          mv byteman-download-${BYTEMAN_VERSION}/bin/bmcheck.sh /byteman/bin/bmcheck.sh
           
-          cat << EOF > /byteman/rules/hahaha.btm
-          RULE hahaha
-          CLASS Hello
-          METHOD sayHello
-          AT ENTRY
+          cat << EOF > /byteman/rules/bmrule.btm
+          RULE ${RULE_NAME}
+          CLASS ${TARGET_CLASS}
+          METHOD ${TARGET_METHOD}
+          AT ${TARGET_LOCATION}
           IF true
-          DO traceln("hahaha")
+          DO ${ACTION}
           ENDRULE
           EOF
       volumeMounts:
@@ -76,7 +121,7 @@ spec:
       image: leeeeeyeon/java-sample-app:latest
       env:
         - name: JAVA_TOOL_OPTIONS
-          value: "-javaagent:/byteman/lib/byteman.jar=script:/byteman/rules/hahaha.btm"
+          value: "-javaagent:/byteman/lib/byteman.jar=script:/byteman/rules/bmrule.btm"
       volumeMounts:
         - mountPath: /byteman
           name: byteman-volume
